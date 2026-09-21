@@ -1,86 +1,149 @@
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Trash2, Edit } from 'lucide-react';
+import { Card, CardContent } from '../../components/ui/Card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Check, X, Trash2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const snap = await getDocs(collection(db, 'products'));
-      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const snapshot = await getDocs(collection(db, 'products'));
+      setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
-      toast.error("Failed to load products");
+      console.error(error);
+      toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+  const handleStatusUpdate = async (productId, newStatus) => {
     try {
-      await deleteDoc(doc(db, 'products', id));
-      setProducts(products.filter(p => p.id !== id));
-      toast.success("Product deleted");
+      await updateDoc(doc(db, 'products', productId), { status: newStatus });
+      setProducts(products.map(p => p.id === productId ? { ...p, status: newStatus } : p));
+      toast.success(`Product ${newStatus}`);
     } catch (error) {
-      toast.error("Failed to delete product");
+      console.error(error);
+      toast.error('Failed to update product status');
     }
   };
 
-  if (loading) return <div className="p-8">Loading products...</div>;
+  const handleDelete = async (productId) => {
+    if (window.confirm("Delete this product permanently?")) {
+      try {
+        await deleteDoc(doc(db, 'products', productId));
+        setProducts(products.filter(p => p.id !== productId));
+        toast.success("Product deleted");
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete product");
+      }
+    }
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Manage Products</h1>
-        <button className="bg-ff-orange hover:bg-ff-yellow hover:text-black transition-colors px-4 py-2 rounded font-bold text-white">
-          Add New Product
-        </button>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white mb-6">Product Moderation</h1>
 
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-900 border-b border-gray-700">
-              <th className="p-4 font-semibold text-gray-400">Product</th>
-              <th className="p-4 font-semibold text-gray-400">Price</th>
-              <th className="p-4 font-semibold text-gray-400">Category</th>
-              <th className="p-4 font-semibold text-gray-400">Seller</th>
-              <th className="p-4 font-semibold text-gray-400 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="p-4 text-center text-gray-500">No products found.</td>
-              </tr>
-            ) : (
-              products.map(product => (
-                <tr key={product.id} className="border-b border-gray-700/50 hover:bg-gray-700/20">
-                  <td className="p-4 flex items-center gap-3">
-                    <img src={product.imageUrl || "https://via.placeholder.com/40"} alt="" className="w-10 h-10 rounded object-cover" />
-                    <span className="font-medium">{product.title}</span>
-                  </td>
-                  <td className="p-4">${product.discountPrice || product.price}</td>
-                  <td className="p-4"><span className="bg-gray-700 px-2 py-1 rounded text-xs">{product.category}</span></td>
-                  <td className="p-4 text-gray-400">{product.sellerName || 'Admin'}</td>
-                  <td className="p-4 text-right">
-                    <button className="p-2 text-blue-400 hover:text-blue-300 mx-1"><Edit size={18} /></button>
-                    <button onClick={() => handleDelete(product.id)} className="p-2 text-red-400 hover:text-red-300 mx-1"><Trash2 size={18} /></button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead>Seller</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-400">Loading products...</TableCell>
+                </TableRow>
+              ) : products.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-400">No products found</TableCell>
+                </TableRow>
+              ) : (
+                products.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden shrink-0">
+                          {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
+                        </div>
+                        <span className="font-medium text-white line-clamp-1 max-w-[200px]" title={p.title}>{p.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-400">{p.sellerName || 'Unknown'}</TableCell>
+                    <TableCell className="text-gray-300">Rs {p.price}</TableCell>
+                    <TableCell>
+                      <Badge variant={p.status === 'approved' ? 'success' : p.status === 'rejected' ? 'danger' : 'warning'}>
+                        {p.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Link to={`/product/${p.id}`} target="_blank">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white" title="View">
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        {p.status !== 'approved' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                            onClick={() => handleStatusUpdate(p.id, 'approved')}
+                            title="Approve"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {p.status !== 'rejected' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10"
+                            onClick={() => handleStatusUpdate(p.id, 'rejected')}
+                            title="Reject"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          onClick={() => handleDelete(p.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

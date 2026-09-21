@@ -11,21 +11,38 @@ import MainLayout from './layouts/MainLayout';
 import AdminLayout from './layouts/AdminLayout';
 import SellerLayout from './layouts/SellerLayout';
 
-// Pages
+// Pages - Store / Customer
 import Home from './pages/store/Home';
 import Store from './pages/store/Store';
 import ProductDetails from './pages/store/ProductDetails';
 import Cart from './pages/store/Cart';
 import Checkout from './pages/store/Checkout';
+import Profile from './pages/store/Profile';
+import Orders from './pages/store/Orders';
+import Wishlist from './pages/store/Wishlist';
+
+// Pages - Auth
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import AdminLogin from './pages/admin/AdminLogin';
 
-// Admin Pages
+// Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminSellers from './pages/admin/AdminSellers';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminLogs from './pages/admin/AdminLogs';
 
-// Seller Pages
+// Pages - Seller
 import SellerDashboard from './pages/seller/SellerDashboard';
+import SellerProducts from './pages/seller/SellerProducts';
+import AddProduct from './pages/seller/AddProduct';
+import SellerOrders from './pages/seller/SellerOrders';
+import SellerProfile from './pages/seller/SellerProfile';
+import SellerEarnings from './pages/seller/SellerEarnings';
 
 import './index.css';
 
@@ -67,29 +84,44 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/store" element={<Store />} />
+          <Route path="/categories" element={<Store />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
+
+          {/* Protected Customer Routes */}
           <Route path="/checkout" element={<Checkout />} />
-          <Route path="/profile" element={<div className="container mx-auto p-12 text-center text-xl">Profile Page Placeholder</div>} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/order/:id" element={<Orders />} />
+          <Route path="/wishlist" element={<Wishlist />} />
         </Route>
 
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="sellers" element={<AdminSellers />} />
           <Route path="products" element={<AdminProducts />} />
-          <Route path="users" element={<div className="p-8">Users Management Placeholder</div>} />
-          <Route path="settings" element={<div className="p-8">Settings Placeholder</div>} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="audit-logs" element={<AdminLogs />} />
+          <Route path="media" element={<div className="p-8 text-white">Media Library Placeholder</div>} />
         </Route>
 
         {/* Seller Routes */}
         <Route path="/seller" element={<SellerLayout />}>
           <Route index element={<SellerDashboard />} />
-          <Route path="products" element={<div className="p-8">Seller Products Placeholder</div>} />
-          <Route path="products/add" element={<div className="p-8">Add Product Placeholder</div>} />
+          <Route path="products" element={<SellerProducts />} />
+          <Route path="products/add" element={<AddProduct />} />
+          <Route path="orders" element={<SellerOrders />} />
+          <Route path="profile" element={<SellerProfile />} />
+          <Route path="earnings" element={<SellerEarnings />} />
         </Route>
       </Routes>
     </BrowserRouter>
